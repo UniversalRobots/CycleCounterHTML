@@ -1,13 +1,16 @@
 package com.ur.urcap.examples.cyclecounter.impl;
 
+import com.ur.urcap.api.contribution.ProgramNodeConfiguration;
 import com.ur.urcap.api.contribution.ProgramNodeContribution;
 import com.ur.urcap.api.contribution.ProgramNodeService;
+import com.ur.urcap.api.contribution.ProgramNodeServiceConfigurable;
+import com.ur.urcap.api.contribution.program.configuration.debugging.ProgramDebuggingSupport;
 import com.ur.urcap.api.domain.URCapAPI;
 import com.ur.urcap.api.domain.data.DataModel;
 
 import java.io.InputStream;
 
-public class CycleCounterProgramNodeService implements ProgramNodeService {
+public class CycleCounterProgramNodeService implements ProgramNodeService, ProgramNodeServiceConfigurable {
 	@Override
 	public String getId() {
 		return "CycleCounter";
@@ -36,5 +39,12 @@ public class CycleCounterProgramNodeService implements ProgramNodeService {
 	@Override
 	public ProgramNodeContribution createNode(URCapAPI api, DataModel model) {
 		return new CycleCounterProgramNodeContribution(api, model);
+	}
+
+	@Override
+	public void configureContribution(ProgramNodeConfiguration programNodeConfiguration) {
+		ProgramDebuggingSupport programDebuggingSupport = programNodeConfiguration.getProgramDebuggingSupport();
+		programDebuggingSupport.setAllowBreakpointOnChildNodesInSubtree(true);
+		programDebuggingSupport.setAllowStartFromChildNodesInSubtree(true);
 	}
 }
