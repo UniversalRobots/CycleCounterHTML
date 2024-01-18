@@ -1,6 +1,7 @@
 package com.ur.urcap.examples.cyclecounter.impl;
 
 import com.ur.urcap.api.contribution.ProgramNodeContribution;
+import com.ur.urcap.api.domain.ProgramAPI;
 import com.ur.urcap.api.domain.URCapAPI;
 import com.ur.urcap.api.domain.data.DataModel;
 import com.ur.urcap.api.domain.program.nodes.ProgramNodeFactory;
@@ -34,7 +35,7 @@ import static com.ur.urcap.api.ui.component.SelectEvent.EventType.ON_SELECT;
 
 public class CycleCounterProgramNodeContribution implements ProgramNodeContribution {
 	public static final String SELECTED_VAR = "selectedVar";
-	private final URCapAPI api;
+	private final ProgramAPI programAPI;
 	private final DataModel model;
 	private final VariableFactory variableFactory;
 
@@ -52,19 +53,23 @@ public class CycleCounterProgramNodeContribution implements ProgramNodeContribut
 	private final BufferedImage errorIcon;
 
 	public CycleCounterProgramNodeContribution(URCapAPI api, DataModel model) {
-		this.api = api;
+		this.programAPI = api.getProgramAPIProvider().getProgramAPI();
 		this.model = model;
-		variableFactory = api.getVariableModel().getVariableFactory();
-		this.errorIcon = getErrorImage();
+		variableFactory = programAPI.getVariableModel().getVariableFactory();
+		errorIcon = getErrorImage();
 
+		insertNode();
+	}
+
+	private void insertNode() {
 		try {
-			ProgramNodeFactory programNodeFactory = api.getProgramModel().getProgramNodeFactory();
+			ProgramNodeFactory programNodeFactory = programAPI.getProgramModel().getProgramNodeFactory();
 			WaitNode waitNode = programNodeFactory.createWaitNode();
 
-			Time oneSecondWait = api.getValueFactoryProvider().getSimpleValueFactory().createTime(1, Time.Unit.S);
+			Time oneSecondWait = programAPI.getValueFactoryProvider().getSimpleValueFactory().createTime(1, Time.Unit.S);
 			TimeWaitNodeConfig config = waitNode.getConfigFactory().createTimeConfig(oneSecondWait, ErrorHandler.AUTO_CORRECT);
 
-			api.getProgramModel().getRootTreeNode(this).addChild(waitNode.setConfig(config));
+			programAPI.getProgramModel().getRootTreeNode(this).addChild(waitNode.setConfig(config));
 		} catch (TreeStructureException e) {
 			e.printStackTrace();
 		} catch (InvalidDomainException e) {
@@ -81,7 +86,7 @@ public class CycleCounterProgramNodeContribution implements ProgramNodeContribut
 
 	@Override
 	public void closeView() {
-
+		// No action needed when closing view
 	}
 
 	@Input(id = "btnCreateNew")
@@ -91,7 +96,7 @@ public class CycleCounterProgramNodeContribution implements ProgramNodeContribut
 				clearErrors();
 				//Create a global variable with an initial value and store it in the data model to make it available to all program nodes.
 				GlobalVariable variable = variableFactory.createGlobalVariable(inputVariableName.getText(),
-						api.getValueFactoryProvider().createExpressionBuilder().append("0").build());
+						programAPI.getValueFactoryProvider().createExpressionBuilder().append("0").build());
 				model.set(SELECTED_VAR, variable);
 			} catch (VariableException e) {
 				setError(e.getLocalizedMessage());
@@ -118,7 +123,7 @@ public class CycleCounterProgramNodeContribution implements ProgramNodeContribut
 
 	private void updateComboBox() {
 		ArrayList<Object> items = new ArrayList<Object>();
-		items.addAll(api.getVariableModel().get(new Filter<Variable>() {
+		items.addAll(programAPI.getVariableModel().get(new Filter<Variable>() {
 			@Override
 			public boolean accept(Variable element) {
 				return element.getType().equals(Variable.Type.GLOBAL) || element.getType().equals(Variable.Type.VALUE_PERSISTED);
